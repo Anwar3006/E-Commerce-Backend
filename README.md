@@ -77,9 +77,10 @@ Server is running on port: 5050...
 
 ## Endpoints
 
-1. #### Users: /users
+1. ### Users: /users
 
-POST /register
+#### POST /register
+
 Creates an account for users.
 Request.body includes:
 
@@ -113,7 +114,8 @@ Response includes:
 }
 ```
 
-POST /login-user & /login-admin
+#### POST /login-user & /login-admin
+
 Seperate route for users and admins to implement security
 Request.body takes in email and password. After login a token is generated for the user/admin to signify successful login:
 
@@ -128,7 +130,8 @@ Request.body takes in email and password. After login a token is generated for t
 }
 ```
 
-GET /refresh
+#### GET /refresh
+
 Refresh login token for users
 Obtains cookies from req.cookies that represents the token generated when user first logs in. Response is a newly generated accessToken:
 
