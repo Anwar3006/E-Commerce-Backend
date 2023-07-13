@@ -1,53 +1,161 @@
-E-commerce Backend API Documentation
+# E-commerce Backend API Documentation
 
 Welcome to the documentation for the E-commerce Backend API. This documentation provides detailed information on how to use and interact with the API endpoints for an e-commerce platform.
 
-Table of Contents
-
-Introduction
-Authentication
-Error Handling
-Endpoints
+| Table of Contents |
+| ----------------- |
+| Introduction      |
+| Authentication    |
+| Error Handling    |
+| Endpoints:        |
 
 1. Users
 2. Products
 3. Users
 4. Orders
 5. Payments
-   Conclusion
-   Additional Resources
-   Introduction
+
+|                      |
+| -------------------- |
+|                      |
+| Conclusion           |
+| Additional Resources |
+
+## Introduction
 
 The E-commerce Backend API allows developers to build and integrate e-commerce functionalities into their applications. It provides a set of endpoints to manage products, users, orders, and payments.
 
 The API follows RESTful principles and uses JSON for data representation. It supports standard HTTP methods such as GET, POST, PUT, and DELETE. Responses are returned with appropriate HTTP status codes and include JSON payloads.
 
-Authentication
+## Authentication
 
 Authentication is required to access protected endpoints. The API uses JSON Web Tokens (JWT) for authentication. To authenticate, include the JWT token in the Authorization header of each request.
 
 Example:
 
-makefile
-Copy code
+```javascript
 Authorization: Bearer <JWT token>
-To obtain a JWT token, make a POST request to the /auth/login endpoint with valid credentials.
+```
 
-Error Handling
+To obtain a JWT token, make a POST request to the / auth/login endpoint with valid credentials;
 
-The API follows a consistent error handling approach. Errors are returned with appropriate HTTP status codes and include an error message in the response body.
+## Error Handling
 
-Example error response:
+The API follows a consistent error handling approach. Errors are returned with HTTP status code 500 along with an error message describing the nature of the error along with the source.
 
-css
-Copy code
-HTTP/1.1 400 Bad Request
+Example error response for invalid credentials during user login:
+
+```json
+HTTP/1.1 500 Internal Server Error
 Content-Type: application/json
 
 {
-"error": "Invalid request parameters."
+  "message":"Invalid username and password"
+  "stack": "Error: Invalid username and password\n at ECommerce-Back/controllers/userCtrl.js:75:15"
 }
-Endpoints
+```
+
+## Set-Up
+
+- Open Terminal/Command Prompt inside the project directory and type `npm init` to install the neccesary packages
+- Open `.env` file and paste your MongoDB URL.
+- Type `npm run server` to start the server. If everything goes smoothly you should see:
+
+```bash
+npm run server
+
+> ecommerce@1.0.0 server
+> nodemon ./app.js
+
+[nodemon] 2.0.22
+[nodemon] to restart at any time, enter `rs`
+[nodemon] watching path(s): *.*
+[nodemon] watching extensions: js,mjs,json
+[nodemon] starting `node ./app.js`
+Server is running on port: 5050...
+```
+
+## Endpoints
+
+1. #### Users: /users
+
+POST /register
+
+Creates an account for users.
+Request.body includes:
+
+```json
+{
+  "firstname": "User1",
+  "lastname": "Test",
+  "email": "user1@testing.com",
+  "mobile": "0123456789",
+  "password": "*****"
+}
+```
+
+Response includes:
+
+```json
+{
+  "firstname": "User1",
+  "lastname": "Test",
+  "email": "user1@testing.com",
+  "mobile": "0123456789",
+  "password": "$2b$10$J8R2wBdJHVIFCDdU/MBb5eaLbqwKM1wU.Mgege9.LFvjXuQosDUf2",
+  "role": "user",
+  "isBlocked": false,
+  "cart": [],
+  "wishlist": [],
+  "_id": "64b005d7bcb99c9d8ae8943a",
+  "createdAt": "2023-07-13T14:10:31.599Z",
+  "updatedAt": "2023-07-13T14:10:31.599Z",
+  "__v": 0
+}
+```
+
+POST /login-user & /login-admin
+
+Seperate route for users and admins to implement security
+Request.body takes in email and password. After login a token is generated for the user/admin to signify successful login:
+
+```json
+{
+  "id": "64a7010e591244ab320de8e0",
+  "firstname": "User1",
+  "lastname": "Trial",
+  "email": "user1@testing.com",
+  "mobile": "0123456789",
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY0YTcwMTBlNTkxMjQ0YWIzMjBkZThlMCIsImlhdCI6MTY4OTI1NzExMiwiZXhwIjoxNjg5MzQzNTEyfQ.Gt7opqsBZYXb2myc-QtIY305jd9ThoogkGgbORq-H4M"
+}
+```
+
+GET /refresh
+
+Refresh login token for users
+Obtains cookies from req.cookies that represents the token generated when user first logs in. Response is a newly generated accessToken:
+
+```json
+{
+  "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY0YTJiOWU4ZjkwYTVjZmRlODgwN2Y5ZSIsImlhdCI6MTY4OTI1ODAxNSwiZXhwIjoxNjg5MzQ0NDE1fQ.qCNJEjnJz9OViOn0ySjwKIcUCOECqgXj3G6nrrKagqo"
+}
+```
+
+GET /logout
+
+User log out route. Uses token obtained from req.cookies to search for userId to log out. Upon completion a 204 HTTP Response is sent to user.
+
+PUT /updatepassword
+
+User needs to login in order to change password. To test functionality, login and copy token which should be included in Authorization header in order for successful execution of request.
+
+POST /forgotpassword
+
+User enters email inside req.body and a message is generated and sent to user's mail with the `/resetpassword/token` link. The same token is returned as a response to this request.
+
+```
+"21476b4c7b4af74aa1b09bf090513be203582cc259d10bd6bc179d5cbc11790d"
+```
 
 2. Products
    GET /products
@@ -150,10 +258,9 @@ This documentation provides an overview of the E-commerce Backend API and its av
 
 Remember to include the necessary authentication headers and handle errors appropriately when using the API.
 
-If you have any questions or need further assistance, please refer to the additional resources section or contact our support team.
+If you have any questions or need further assistance, please refer to the additional resources section or contact me support team.
 
-Additional Resources
+## Additional Resources
 
-API Authentication Guide
-API Reference
-Support Center
+- API Authentication Guide
+- API Reference
