@@ -464,6 +464,7 @@ const getOrders = asyncHandler(async (req, res) => {
   }
 });
 
+//Update order status
 const updateOrderStatus = asyncHandler(async (req, res) => {
   const { id } = req.params;
   const { status } = req.body;

@@ -11,9 +11,9 @@ Welcome to the documentation for the E-commerce Backend API. This documentation 
 
 1. Users
 2. Products
-3. Users
-4. Orders
-5. Payments
+3. Blogs
+4. Cart
+5. Orders (At the moment the only way to process payments is through cash)
 
 |                      |
 | -------------------- |
@@ -141,24 +141,29 @@ Obtains cookies from req.cookies that represents the token generated when user f
 }
 ```
 
-PUT /update
+#### PUT /update
+
 User logs in to update his/her account information.
 Takes info through req.body and returns user's details
 
-GET /logout
+#### GET /logout
+
 User log out route. Uses token obtained from req.cookies to search for userId to log out. Upon completion a 204 HTTP Response is sent to user.
 
-PUT /updatepassword
+#### PUT /updatepassword
+
 User needs to login in order to change password. To test functionality, login and copy token which should be included in Authorization header in order for successful execution of request.
 
-POST /forgotpassword
+#### POST /forgotpassword
+
 User enters email inside req.body and a message is generated and sent to user's mail with the `/resetpassword/token` link. The same token is returned as a response to this request.
 
 ```
 "21476b4c7b4af74aa1b09bf090513be203582cc259d10bd6bc179d5cbc11790d"
 ```
 
-PUT /resetpassword/token
+#### PUT /resetpassword/token
+
 This link is contained inside the mail sent to the email address keyed in by the user. When the user clicks the link it bring him/her to this route. The user can type a new password accepted in req.body which will update the users password. The token has a 10min expiry limit.
 
 Other routes limited to only admins include
@@ -169,101 +174,241 @@ Other routes limited to only admins include
 - GET `get-users`
 - GET `get-users/:userId`
 
-2. Products
-   GET /products
+---
+
+2. ### Products
+   Not all the routes are available for users:
+
+- POST `create`
+- DELETE `delete/:id`
+- PUT `update/:id`
+- PUT `upload/:id`
+  With the exception of the above, all other routes are available to the users
+  #### GET /products
 
 Retrieves a list of products.
-
 Query Parameters:
 
-category (optional): Filters products by category.
-price_min (optional): Filters products with a price greater than or equal to the specified value.
-price_max (optional): Filters products with a price less than or equal to the specified value.
-sort_by (optional): Sorts products by a specified field (e.g., name, price).
-GET /products/{id}
+- category (optional): Filters products by category.
+- price_min (optional): Filters products with a price greater than or equal to the specified value.
+- price_max (optional): Filters products with a price less than or equal to the specified value.
+- sort (optional): Sorts products by a specified field (e.g., name, price).
+- fields (optional): Fields to include with search (e.g., name, price).
+- page, limit (optional): pagination is automatically implemented thus including page and/or limit will skip some products based on these queries
+
+#### GET /products/:id
 
 Retrieves a specific product by its ID.
 
-POST /products
+#### POST /products
 
 Creates a new product.
-
 Request Body:
 
-name (required): The name of the product.
-price (required): The price of the product.
-category (required): The category of the product.
-PUT /products/{id}
+```json
+{
+  "title": "Lenovo S2 Smart Fridge",
+  "description": "Lenovo S2 Smart Watch Fitness Tracker with Heart Rate Monitor, Blood Oxygen Tracking, Sport Modes, 1.4 Inch Touch Screen Smartwatch Fitness Watch for Women Men Compatible with Android iOS",
+  "price": "29.99",
+  "quantity": 9,
+  "brand": "Lenovo",
+  "color": "Black",
+  "category": "Accessories"
+}
+```
 
-Updates an existing product.
+#### PUT /wishlist
 
+Add a product to user's wishlist. Req.body takes in product id.
+
+#### PUT /rating
+
+Give a rating to a product
+
+3. ### Blogs
+
+#### GET /get-blogs/:id
+
+Retrieves a specific blog by their ID.
+
+#### GET /get-blogs
+
+Retreives all blogs
+
+#### POST /create (Reserved for Admin)
+
+Creates a new blog.
 Request Body:
 
-name (optional): The updated name of the product.
-price (optional): The updated price of the product.
-category (optional): The updated category of the product.
-DELETE /products/{id}
+```json
+{
+  "title": "Create a Blog Post 4",
+  "description": "Tesing the Blog creation route 4",
+  "category": "Psychology"
+}
+```
 
-Deletes a product.
+#### PUT /update/:id (Reserved for Admin)
 
-3. Users
-   GET /users/{id}
+Updates an existing blog post.
 
-Retrieves a specific user by their ID.
-
-POST /users
-
-Creates a new user.
-
-Request Body:
-
-name (required): The name of the user.
-email (required): The email address of the user.
-password (required): The password of the user.
-PUT /users/{id}
-
-Updates an existing user.
-
-Request Body:
-
-name (optional): The updated name of the user.
-email (optional): The updated email address of the user.
-password (optional): The updated password of the user.
-DELETE /users/{id}
+#### DELETE /delete/:id (Reserved for Admin)
 
 Deletes a user.
 
-4. Orders
-   GET /orders
+#### PUT /likes
 
-Retrieves a list of orders.
+Like a blog post
 
-Query Parameters:
+#### PUT /dislikes
 
-user_id (optional): Filters orders by user ID.
-status (optional): Filters orders by status (e.g., pending, shipped).
-GET /orders/{id}
+Dislike a post
 
-Retrieves a specific order by its ID.
+#### PUT /upload/:id (Reserved for Admin)
 
-POST /orders
+4. ### Cart /cart
 
-Creates a new order.
+#### POST /cart/add-to-cart
 
-Request Body:
+User adds item to cart.
 
-user_id (required): The ID of the user placing the order.
-product_ids (required): An array of product IDs included in the order.
+```json
+{
+  "products": [
+    {
+      "product": "64a5e399ee2e61a3479c6bd7",
+      "count": 3,
+      "color": "Grey",
+      "price": 1299,
+      "_id": "64b023e02934248f77cffa07"
+    },
+    {
+      "product": "64a5e12dee2e61a3479c6bc6",
+      "count": 3,
+      "color": "Grey",
+      "price": 329,
+      "_id": "64b023e02934248f77cffa08"
+    }
+  ],
+  "cartTotal": 4884,
+  "orderBy": "64b005d7bcb99c9d8ae8943a",
+  "_id": "64b023e02934248f77cffa06",
+  "createdAt": "2023-07-13T16:18:40.302Z",
+  "updatedAt": "2023-07-13T16:18:40.302Z",
+  "__v": 0
+}
+```
 
-5. Payments
-   POST /payments
+#### GET /get
 
-Processes a payment for an order.
+Get user's cart
 
-Request Body:
+```json
+{
+  "_id": "64b023e02934248f77cffa06",
+  "products": [
+    {
+      "product": {
+        "_id": "64a5e399ee2e61a3479c6bd7",
+        "title": "M2 chip MacBook Pro 13",
+        "slug": "M2-chip-MacBook-Pro-13",
+        "description": "The new M2 chip makes the 13‑inch MacBook Pro more capable than ever. The same compact design supports up to 20 hours of battery life1 and an active cooling system to sustain enhanced performance. Featuring a brilliant Retina display, a FaceTime HD camera, and studio‑quality mics, it’s our most portable pro laptop.",
+        "price": 1299,
+        "category": "Laptop",
+        "brand": "Apple",
+        "sold": 0,
+        "quantity": 19,
+        "images": [
+          {
+            "url": "https://res.cloudinary.com/daffqurhi/image/upload/v1688944695/tvgkdcr21gec6m85ik6r.jpg"
+          }
+        ],
+        "color": ["Grey"],
+        "ratings": [
+          {
+            "star": 4,
+            "postedby": "64a2b9e8f90a5cfde8807f9e",
+            "_id": "64aacbf877265e62b609debe"
+          },
+          {
+            "star": 3,
+            "postedby": "64a7010e591244ab320de8e0",
+            "_id": "64aacf0c77265e62b609decb",
+            "comment": "This product sucks"
+          }
+        ],
+        "createdAt": "2023-07-05T21:41:45.651Z",
+        "updatedAt": "2023-07-09T23:18:15.765Z",
+        "__v": 0,
+        "totalrating": "4"
+      },
+      "count": 3,
+      "color": "Grey",
+      "price": 1299,
+      "_id": "64b023e02934248f77cffa07"
+    },
+    {
+      "product": {
+        "totalrating": "0",
+        "_id": "64a5e12dee2e61a3479c6bc6",
+        "title": "iPad (9th generation)",
+        "slug": "iPad-(9th-generation)",
+        "description": "With incredible detail and vivid colors, the 10.2‑inch Retina display is perfect for watching movies, working on a project, or drawing your next masterpiece.",
+        "price": 329,
+        "category": "Accessories",
+        "brand": "Apple",
+        "sold": 0,
+        "quantity": 25,
+        "images": [],
+        "color": ["Grey"],
+        "ratings": [],
+        "createdAt": "2023-07-05T21:31:25.088Z",
+        "updatedAt": "2023-07-05T21:31:25.088Z",
+        "__v": 0
+      },
+      "count": 3,
+      "color": "Grey",
+      "price": 329,
+      "_id": "64b023e02934248f77cffa08"
+    }
+  ],
+  "cartTotal": 4884,
+  "orderBy": "64b005d7bcb99c9d8ae8943a",
+  "createdAt": "2023-07-13T16:18:40.302Z",
+  "updatedAt": "2023-07-13T16:18:40.302Z",
+  "__v": 0
+}
+```
 
-order_id (required): The ID of the order to be paid.
-amount (required): The total payment amount.
+#### DELETE /cart
+
+Empty user cart.
+
+#### POST /apply-coupon
+
+User applies coupon accepted through req.body
+
+5. ### Orders /users
+
+#### GET orders/get
+
+Retrieves a list of orders for the user.
+
+#### POST orders/create
+
+Creates a new order. Req.body accepts COD(Cash on Delivery) and couponApplied.
+
+```json
+{
+  "COD": true,
+  "couponApplied": false
+}
+```
+
+#### PUT orders/update/:id (Reserved for Admin)
+
+Update the status of orders made by the user
+
 Conclusion
 
 This documentation provides an overview of the E-commerce Backend API and its available endpoints. It covers authentication, error handling, and the details of each endpoint along with their request/response structures.
