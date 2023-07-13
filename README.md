@@ -80,7 +80,6 @@ Server is running on port: 5050...
 1. #### Users: /users
 
 POST /register
-
 Creates an account for users.
 Request.body includes:
 
@@ -115,7 +114,6 @@ Response includes:
 ```
 
 POST /login-user & /login-admin
-
 Seperate route for users and admins to implement security
 Request.body takes in email and password. After login a token is generated for the user/admin to signify successful login:
 
@@ -131,7 +129,6 @@ Request.body takes in email and password. After login a token is generated for t
 ```
 
 GET /refresh
-
 Refresh login token for users
 Obtains cookies from req.cookies that represents the token generated when user first logs in. Response is a newly generated accessToken:
 
@@ -141,21 +138,33 @@ Obtains cookies from req.cookies that represents the token generated when user f
 }
 ```
 
-GET /logout
+PUT /update
+User logs in to update his/her account information.
+Takes info through req.body and returns user's details
 
+GET /logout
 User log out route. Uses token obtained from req.cookies to search for userId to log out. Upon completion a 204 HTTP Response is sent to user.
 
 PUT /updatepassword
-
 User needs to login in order to change password. To test functionality, login and copy token which should be included in Authorization header in order for successful execution of request.
 
 POST /forgotpassword
-
 User enters email inside req.body and a message is generated and sent to user's mail with the `/resetpassword/token` link. The same token is returned as a response to this request.
 
 ```
 "21476b4c7b4af74aa1b09bf090513be203582cc259d10bd6bc179d5cbc11790d"
 ```
+
+PUT /resetpassword/token
+This link is contained inside the mail sent to the email address keyed in by the user. When the user clicks the link it bring him/her to this route. The user can type a new password accepted in req.body which will update the users password. The token has a 10min expiry limit.
+
+Other routes limited to only admins include
+
+- PUT `block/:userId`
+- PUT `unblock/:userId`
+- DELETE `delete/:userId`
+- GET `get-users`
+- GET `get-users/:userId`
 
 2. Products
    GET /products
