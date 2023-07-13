@@ -1,0 +1,128 @@
+STEPS
+create controllers folder
+create db folder
+create middleware folder
+create models folder
+create routes folder
+
+create app.js
+npm install {
+    express
+    express-async-handler
+    nodemon (--save-dev)
+    mongoose
+    eslint (--save-dev)
+    jsonwebtoken
+    bcrypt
+    dotenv
+}
+
+models/userModel:
+    Using Mongo Snippet for Node-js;
+    type `!mdbgum` to generate userSchema
+    make modifications {
+        isAdmin
+        isBlocked
+        cart
+        role
+        address
+        wishlist
+    }
+    add timestamps as key and set to true within userSchema in an object
+
+    create userSchema.pre hook with 'save' and a callback function to handle the user's
+    password; using bcrypt.genSaltSync(10) to generate a salt;
+    using bcrypt.hash(this.password, salt) to encrypt the password
+
+    create userSchema.methods.isPasswordMatch a function to check if the password entered
+    by user is the same as the one inside the DB using bcrypt.compare(enteredPWD, this.password)
+
+    export it: module.exports = mongoose.models('User', userSchema)
+
+
+db/dbClient:
+    use mongoose.connect(uri) to create connection
+    wrap it inside a try/catch statement
+    wrap it inside a function eg; dbConnect
+    export it and within app.js import it within app.listen
+    the uri will be passed in as environment variable from the .env file
+    use `require('dotenv').config()` to give access to env varaibales through process.env.(nameOfVariable)
+
+config/jwtoken:
+    const generateToken:
+        generate jwt token to be used as authentication for user logins
+        import jsonwebtoken; import `JWT_SECRET` from .env(the jwt can be anything arbitrary)
+        use jwt.sign(id, JWT_SECRET, {expires: '1d'}) to generate a token
+        wrap inside a function with `id` as argument
+        export it to be used in userCtrl in login controller function
+
+config/refreshToken:
+    const generateRefreshToken:
+        generate jwt token to be used as authentication for user logins
+        import jsonwebtoken; import `JWT_SECRET` from .env(the jwt can be anything arbitrary)
+        use jwt.sign(id, JWT_SECRET, {expires: '3d'}) to generate a token
+        wrap inside a function with `id` as argument
+        export it to be used in userCtrl in login controller function
+        after we get email and password from req.body and search in the database with the email and find a corresponding user; use if statement for if (findUser && (await findUser.isAdmin(password from req.body))) then use generateRefreshToken(findUser.id) to generate a token and store inside a variable and use findByIdandUpdate to update the refreshToken field in the DB to the newly generated token; use res.cookie('nameOfToken', tokenVariable, {maxAge: 72 * 60 * 60 * 1000, httpOnly: true}) to set the cookie to the newly generated token; then simply use res.json to send any of the fields form the db to the user to confirm successful login
+
+middleware/authMiddleware:
+    const authMiddleware is the function name which will act as a middleware
+    gets token from req.headers.authorization which has already been been passed in after the login logs in for the first time.
+    if the authentication header is present and it startsWith Bearer; use split[1] to get the token from the Bearer authentication.
+    use jwt.verify() to check if the token is valid. it will return and object containing data for the user; get the id from that object and use it to search for the user in the Db corresponding to a user; assign the user to req.user; call next()
+
+middleware/errorHandler:
+    const notFound:
+        a middleware function to handle 404 requests
+
+    const errorHandler:
+        a middleware function to handle errors; with this you can simply use `throw new Error('can put error message here if you want')` in any part of the script and this function will handle the error
+
+Functions in userCtrl (all wrapped in asyncHandler):
+    const createUser:
+        The function is responsible for handling the logic of creating a new user in the application, checking for uniqueness of the email address, and returning appropriate responses based on the outcome.
+
+    const loginUser:
+        In summary, this function handles user login by verifying the credentials, generating and updating the refresh token, setting a cookie, and returning user information and an authentication token. Get email and password from req.body
+
+    const handleRefreshToken:
+        In summary, this function is responsible for handling the refresh token flow. It ensures that the provided refresh token is valid and associated with a user, and then generates and sends a new access token to the client, allowing the user to continue accessing protected resources without needing to re-authenticate.
+    
+    const getAllUsers:
+        Function is responsible for getting all users from DB; (you can add pagination to this function later).
+    
+    const getUser:
+        Function is responsible for retrieving a single user based on id gotten from req.params. Gets user id from req.params and users validateID(id) from utils to validate user Id before any operation
+    
+    const deleteUser:
+        Function is responsible for deleting users from DB. Gets user id from req.params and users validateID(id) from utils to validate user Id before any operation
+    
+    const updateUser:
+        The updateUser function handles the process of updating a user's information in the database and provides a response with the updated user details. Gets user id from req.user and users validateID(id) from utils to validate user Id before any operation and get update fields from req.body
+
+    const blockUser:
+        Updates user's isBlocked value in DB to True to indicate that user has been blocked by admin. Gets user id from req.params and users validateID(id) from utils to validate user Id before any operation
+    
+    const unblockUser:
+        Updates user's isBlocked value in DB to False to indicate that user has been unblocked by admin. Gets user id from req.params and users validateID(id) from utils to validate user Id before any operation
+    
+routes/authRoute:
+    POST routes:
+        '/register' ======= createUser
+        '/login' ======= loginUser
+    GET routes:
+        '/users' ======= getAllUsers
+        '/users/:id' ======= authMiddleware, isAdmin, getUser
+        '/login/refresh' ======= handleRefreshToken
+        '/logout' ======= logout
+    PUT routes:
+        '/users/edit' ======= authMiddleware, updateUser
+        '/users/block/:id' ======= authMiddleware, isAdmin, blocked
+        '/users/unblock/:id' ======= authMiddleware, isAdmin, unblockUser
+    DELETE route:
+        '/users/:id' ======= deleteUser
+
+utils/validateID:
+    const validateID(id):
+        function takes id and passes it through this `mongoose.Types.ObjectId.isValid(id);`; assign to a varaibale; check if (!isValid) then throw error
+

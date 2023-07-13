@@ -1,0 +1,239 @@
+const asyncHandler = require("express-async-handler")
+const Product = require("../models/productModel")
+const slugify = require('slugify')
+const { validateID } = require("../utils/validateID")
+const { cloudinaryUploadImg } = require('../utils/cloudinary')
+const fs = require('fs')
+const User = require('../models/userModel')
+
+//Create products
+const createProduct = asyncHandler(async (req, res) => {
+    try {
+        if (req.body.title) {
+            req.body.slug = slugify(req.body.title)
+        }
+        const newProduct = await Product.create(req.body)
+        res.status(201).json(newProduct)
+    } catch (error) {
+        throw new Error(error);
+    }
+
+})
+
+//Get all Products
+const getAllProducts = asyncHandler(async (req, res) => {
+    try {
+        //Implementing Filtering
+        const queryObj = {...req.query}
+        const excludeFields = ['sort', 'page', 'limit', 'fields']
+        // delete any occurence of elements in excludeFields in queryObj
+        excludeFields.forEach((element) => delete queryObj[element])
+        
+        let queryStr = JSON.stringify(queryObj)
+        queryStr = queryStr.replace(/\b(gte|gt|lte|lt)\b/g, (match) => `$${match}`)
+        let query = Product.find(JSON.parse(queryStr))
+
+        //Implementing Sorting
+        if (req.query.sort) {
+            const sortBy = req.query.sort.split(',').join(' ')
+            query = query.sort(sortBy)
+        } else {
+            query = query.sort('-createdAt')
+        }
+
+        //Limiting the fields
+        if (req.query.fields) {
+            const fields = req.query.fields.split(',').join(' ')
+            query = query.select(fields)
+        } else {
+            query = query.select('-__v')
+        }
+
+        //Pagination
+        if (req.query.page) {
+            const page = parseInt(req.query.page);
+            const limit = parseInt(req.query.limit);
+            const skip = (page - 1) * limit
+            query = query.skip(skip).limit(limit)
+            const productCount = await Product.countDocuments()
+            if (skip >= productCount) throw new Error('Page doesn\'t exist')
+        }
+
+        const findProducts = await query
+        res.json(findProducts)
+    } catch (error) {
+        throw new Error(error)
+    }
+})
+
+//Get a Product
+const getProduct = asyncHandler(async (req, res) => {
+    const { id } = req.params;
+    try {
+        const findProduct = await Product.findById(id);
+        res.status(200).json(findProduct);
+    } catch (error) {
+        throw new Error(error)
+    }
+})
+
+//Update Product
+const updateProduct = asyncHandler(async (req, res) => {
+    const { id } = req.params
+    try {
+        if (req.body.title){
+            req.body.slug = slugify(req.body.title)
+        }
+        const updateProduct = await Product.findByIdAndUpdate(
+            {'_id': id},
+            req.body,
+            {new: true}
+        )
+        res.json(updateProduct)
+    } catch (error) {
+        throw new Error(error)
+    }
+})
+
+//Delete Product
+const deleteProduct = asyncHandler(async (req, res) => {
+    const { id } = req.params
+    try {
+        const findProduct = await Product.findByIdAndDelete(id)
+        res.status(200).json({
+            success: true,
+            msg: `Product with id: ${findProduct.id} and title: ${findProduct.title} has been successfully deleted`
+        });
+    } catch (error) {
+        throw new Error(error)
+    }
+})
+
+//Add product to Wishlist
+const wishList = asyncHandler(async (req, res) => {
+    const { id } = req.user;
+    const { productId } = req.body
+    validateID(productId)
+    try {
+        const findUser = await User.findById(id)
+        const findProduct = await Product.findById(productId)
+        //check if product is already in wishlist
+        const alreadyAdded = findUser.wishlist.find((id) =>
+        (id) = id.toString() === productId.toString())
+        if (findUser && findProduct && (!alreadyAdded)){
+            const addToWishlist = await User.findByIdAndUpdate(id,
+                { $push: { wishlist: productId } },
+                { new:true }
+            )
+            return res.json(addToWishlist)
+        } else {
+            const addToWishlist = await User.findByIdAndUpdate(id,
+                { $pull: { wishlist: productId } },
+                { new:true }
+            )
+            return res.json(addToWishlist)
+        }
+    } catch (error) {
+        throw new Error(error)
+    }
+})
+
+
+const rating = asyncHandler(async (req, res) => {
+    const { id } = req.user;
+    const { star, productId, comment } = req.body;
+    const findProduct = await Product.findById(productId)
+    try {
+        //check if user has already rated product
+        //find will check inside postedby and compare the userId inside to the id we got
+        //from req.user; if there is a match then then it is returned; the returned value
+        //is an object that contains the star, postedby(the id of the user that posted), and
+        //a new id generated by Mongodb; Note: Rating is an array of objects 
+        const alreadyRated = findProduct.ratings.find(
+            (userId) => userId.postedby.toString() === id.toString()
+        );
+
+        if (alreadyRated) {
+            await Product.updateOne(
+                {
+                    ratings: { $elemMatch: alreadyRated }
+                },
+                {
+                    $set: { "ratings.$.star": star, "ratings.$.comment": comment }
+                },
+                {
+                    new:true
+                }
+            )
+        } else {
+            await Product.findByIdAndUpdate(
+                productId,
+                { $push: 
+                    { 
+                        ratings: 
+                        {
+                            star: star,
+                            postedby: id,
+                            comment: comment
+                        },
+                    } 
+                },
+                { new:true }
+            )
+        }
+    //Compute the total rating from all the user ratings on a product
+    const getAllRatings = await Product.findById(productId);
+    let totalRatings = getAllRatings.ratings.length;
+    let ratingSum = getAllRatings.ratings
+    .map((item) => item.star)
+    .reduce((prev, curr) => prev + curr, 0)
+    let actualRating = Math.round(ratingSum / totalRatings)
+    const getRatings = await Product.findByIdAndUpdate(
+        productId,
+        {
+            totalrating: actualRating
+        },
+        {
+            new:true
+        }
+    )
+    res.json(getRatings)
+    } catch (error) {
+        throw new Error(error)
+    }
+})
+
+const uploadImages = asyncHandler(async (req, res) => {
+    const { id } = req.params
+    validateID(id)
+    try {
+        const uploader = (path) => cloudinaryUploadImg(path, 'images')
+        const urls = []
+        const files = req.files;
+        for (const file of files) {
+            const { path } = file;
+            const newPath = await uploader(path)
+            urls.push(newPath)
+            fs.unlinkSync(path)
+        }
+        const findProduct = await Product.findByIdAndUpdate(
+            id,
+            { images: urls.map((file) => { return file}) },
+            { new:true }
+        )
+        res.json(findProduct)
+    } catch (error) {
+        throw new Error(error)
+    }
+})
+
+module.exports = {
+    createProduct,
+    getProduct,
+    getAllProducts,
+    updateProduct,
+    deleteProduct,
+    wishList,
+    rating,
+    uploadImages,
+}
