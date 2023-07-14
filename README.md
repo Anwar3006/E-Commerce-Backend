@@ -225,6 +225,8 @@ Add a product to user's wishlist. Req.body takes in product id.
 
 Give a rating to a product
 
+---
+
 3. ### Blogs
 
 #### GET /get-blogs/:id
@@ -265,6 +267,8 @@ Like a blog post
 Dislike a post
 
 #### PUT /upload/:id (Reserved for Admin)
+
+---
 
 4. ### Cart /cart
 
@@ -388,6 +392,8 @@ Empty user cart.
 
 User applies coupon accepted through req.body
 
+---
+
 5. ### Orders /users
 
 #### GET orders/get
@@ -409,7 +415,9 @@ Creates a new order. Req.body accepts COD(Cash on Delivery) and couponApplied.
 
 Update the status of orders made by the user
 
-Conclusion
+---
+
+### Conclusion
 
 This documentation provides an overview of the E-commerce Backend API and its available endpoints. It covers authentication, error handling, and the details of each endpoint along with their request/response structures.
 
@@ -417,7 +425,9 @@ Remember to include the necessary authentication headers and handle errors appro
 
 If you have any questions or need further assistance, please refer to the additional resources section or contact me support team.
 
-## Additional Resources
+---
+
+### Additional Resources
 
 - API Authentication Guide
 - API Reference
